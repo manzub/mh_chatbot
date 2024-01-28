@@ -2,7 +2,6 @@ import nltk
 from nltk.stem import WordNetLemmatizer
 import json
 import pickle
-import pandas as pd
 import numpy as np
 from keras.models import Sequential
 from keras.layers import Dense, Activation, Dropout
@@ -93,3 +92,4 @@ model.compile(loss='categorical_crossentropy', optimizer=sgd, metrics=['accurrac
 # fitting and saving the model
 hist = model.fit(np.array(train_x), np.array(train_y), epochs=200, batch_size=5, verbose=1)
 model.save('model.h5', hist)
+print('model saved and created')
