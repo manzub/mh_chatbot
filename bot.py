@@ -38,6 +38,7 @@ def bag_of_words(sentence, words, show_details=True):
           print("found in bag: %s" % w)
   return np.array(bag)
 
+context = {}
 
 def predict_class(sentence, model):
   # create bag of words
@@ -57,22 +58,39 @@ def predict_class(sentence, model):
 
 
 # match predicted intent with intents in json
-def getResponse(ints, intents_json):
+def getResponse(ints, userId, intents_json, show_details=False):
   tag = ints[0]['intent']
   list_of_intents = intents_json['intents']
-  for i in list_of_intents:
-    if i['tag'] == tag:
-      result = random.choice(i['responses'])
-      break;
-  return result
+  if ints:
+    while ints:
+      for i in list_of_intents:
+        # find a tag matching the first intent
+        if i['tag'] == tag:
+          # set context if necessary
+          if 'context_set' in i:
+            if show_details: print('context:', i['context_set'])
+            context[userId] = i['context_set']
+
+          # check if this intent is contextual and applies to the current conversation
+          if not 'context_filter' in i or (userId in context and 'context_filter' in i and i['context_filter'] == context[userId]):
+            if show_details: print('tag:', i['tag'])
+            result = random.choice(i['responses'])
+            return result
+      ints.pop(0)
+            
+  # for i in list_of_intents:
+  #   if i['tag'] == tag:
+  #     result = random.choice(i['responses'])
+  #     break;
+  # return result
 
 
 # provide response to user input
-def chatbot_response(msg):
+def chatbot_response(msg, userId):
   chatbotResponse = 'Loading bot response.....'
 
   ints = predict_class(msg, model)
-  res = getResponse(ints, intents)
+  res = getResponse(ints, userId, intents)
   chatbotResponse = res
 
   return chatbotResponse
