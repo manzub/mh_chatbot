@@ -61,6 +61,8 @@ def predict_class(sentence, model):
 def getResponse(ints, userId, intents_json, show_details=False):
   tag = ints[0]['intent']
   list_of_intents = intents_json['intents']
+  result = "Sorry but i don't have a response to that"
+
   if ints:
     while ints:
       for i in list_of_intents:
@@ -77,12 +79,6 @@ def getResponse(ints, userId, intents_json, show_details=False):
             result = random.choice(i['responses'])
             return result
       ints.pop(0)
-            
-  # for i in list_of_intents:
-  #   if i['tag'] == tag:
-  #     result = random.choice(i['responses'])
-  #     break;
-  # return result
 
 
 # provide response to user input

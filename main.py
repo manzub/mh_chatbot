@@ -1,18 +1,88 @@
 from bot import chatbot_response
+from models import Item, User, Notification
+import shortuuid
 import contextlib
 from fastapi import FastAPI, HTTPException, Query
-from fastapi.encoders import jsonable_encoder
+from bson import ObjectId
 from pydantic import BaseModel
+from pymongo import MongoClient
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
+
+
+origins = [
+  "http://localhost:3000"
+]
 
 app = FastAPI()
+app.add_middleware(
+  CORSMiddleware,
+  allow_origins=origins,
+  allow_credentials=True,
+  allow_headers=["*"],
+  allow_methods=["*"],
+)
 
-class Item(BaseModel):
-  msg: str
+client = MongoClient('mongodb://localhost:27017/')
+db = client['oom']
 
 
 @app.get('/')
 def root():
   return {"Hello": "World"}
+
+@app.get('/setup_oom_user')
+async def setup_oom_user():
+  # setup unique user id
+  userId = shortuuid.uuid()
+  result = User(_id=ObjectId(), userId=userId, notifications=[])
+  # check exists user
+  user = db.users.find_one({ "userId": userId }, { "_id": 0 })
+
+  if user: #if found a user - create a new uuid
+    result['userId'] = shortuuid.uuid()
+
+  db.users.insert_one(result.dict(by_alias=True))
+  return JSONResponse(content=jsonable_encoder(result))
+
+@app.get('/get_user/{userId}')
+async def get_user_by_id(userId: str):
+  result = "An error occured"
+
+  if userId:
+    user = db.users.find_one({ "userId": userId }, { "_id": 0 })
+
+    if user:
+      result = "User found"
+    else:
+      result = "User not found"
+
+  return JSONResponse(content=jsonable_encoder({ "response": result, "user": user }))
+
+
+class Params(BaseModel):
+  userId: str
+  message: str
+
+@app.post('/send_love')
+async def send_love(params: Params):
+  result = "An error occurred"
+
+  if params.userId:
+    user = db.users.find_one({ "userId": params.userId }, { "_id": 0 })
+
+    if user: #found user
+      new_notification = Notification(message=params.message) 
+      # update user notifications
+      user["notifications"].append(new_notification.dict())
+      db.users.update_one({ "userId": params.userId }, { "$set": { "notifications": user["notifications"] } })
+      result = "Updated"
+
+    else:
+      result = "Invalid user"
+
+  return JSONResponse(content=jsonable_encoder({ "response": result }))
 
 @app.post('/response')
 def get_bot_response(item: Item):
