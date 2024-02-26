@@ -9,9 +9,6 @@ from pydantic import BaseModel
 from pydantic.v1.json import ENCODERS_BY_TYPE
 ENCODERS_BY_TYPE[ObjectId]=str
 
-class Item(BaseModel):
-  msg: str
-
 
 class ObjectIdPydanticAnnotation:
   @classmethod
@@ -36,14 +33,21 @@ class ObjectIdPydanticAnnotation:
 
 
 class Notification(BaseModel):
+  topic: str
   message: str
-  is_read: bool = False,
+  is_read: bool = False
   created: str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+
+
+class Conversation(BaseModel):
+  convId: str
+  messages: list[str] = []
 
 
 class User(BaseModel):
   id: Annotated[ObjectId, ObjectIdPydanticAnnotation] = Field(alias="_id")
   userId: str
   notifications: list[Notification] = []
+  conversations: list[Conversation] = []
 
 

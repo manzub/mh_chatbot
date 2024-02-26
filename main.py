@@ -1,5 +1,6 @@
 from bot import chatbot_response
-from models import Item, User, Notification
+from models import User, Notification, Conversation
+import json
 import shortuuid
 import contextlib
 from fastapi import FastAPI, HTTPException, Query
@@ -64,6 +65,8 @@ async def get_user_by_id(userId: str):
 class Params(BaseModel):
   userId: str
   message: str
+  convId: str | None = None
+  topic: str | None = None
 
 @app.post('/send_love')
 async def send_love(params: Params):
@@ -73,7 +76,7 @@ async def send_love(params: Params):
     user = db.users.find_one({ "userId": params.userId }, { "_id": 0 })
 
     if user: #found user
-      new_notification = Notification(message=params.message) 
+      new_notification = Notification(message=params.message, topic=params.topic) 
       # update user notifications
       user["notifications"].append(new_notification.dict())
       db.users.update_one({ "userId": params.userId }, { "$set": { "notifications": user["notifications"] } })
@@ -84,7 +87,34 @@ async def send_love(params: Params):
 
   return JSONResponse(content=jsonable_encoder({ "response": result }))
 
+
+@app.post('/save_conversation') #if convoId
+def save_conversation(params: Params):
+  if params.userId and params.message:
+    messages = json.loads(params.message)
+    user = db.users.find_one({ "userId": params.userId }, { "_id": 0 })
+
+    if user: #found user
+      new_conversation = Conversation(convId=params.convId, messages=messages)
+
+      found_conversation = False
+      for i, item in user["conversations"]:
+        if item['convId'] == params.convId:
+          found_conversation = True
+          # replace conversation else new conversation
+          user["conversations"][i] = new_conversation.dict()
+          break
+
+      if not found_conversation:
+        user["conversations"].append(new_conversation.dict())
+
+      db.users.update_one({ "userId": params.userId }, { "$set": { "conversations": user["conversations"] } })
+
+  # return result string
+  return JSONResponse(content=jsonable_encoder({ "response": "Updated", "messages": messages}))
+
+
 @app.post('/response')
-def get_bot_response(item: Item):
-  userText = item.msg
+def get_bot_response(params: Params):
+  userText = params.message
   return chatbot_response(userText, '123')
