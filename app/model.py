@@ -33,6 +33,7 @@ class ObjectIdPydanticAnnotation:
 
 
 class Notification(BaseModel):
+  notiId : str
   topic: str
   message: str
   is_read: bool = False
@@ -51,3 +52,9 @@ class User(BaseModel):
   conversations: list[Conversation] = []
 
 
+class Params(BaseModel):
+  userId: str | None = None
+  message: str | None = None
+  convId: str | None = None
+  notiId: str | None = None
+  topic: str | None = None
