@@ -29,30 +29,30 @@ client = MongoClient('mongodb://localhost:27017/')
 db = client['oom']
 
 def api_response(message: str = None, status: str = None, data: dict | list = None):
-	return {
-		"status": status,
-		"message": message,
-		"data": data
-	}
+  return {
+    "status": status,
+    "message": message,
+    "data": data
+  }
 
 def check_user(userId: str):
-	user = db.users.find_one({ "userId": userId }, { "_id": 0 })
-	if user:
-		return True
-	else:
-		return False
+  user = db.users.find_one({ "userId": userId }, { "_id": 0 })
+  if user:
+    return True
+  else:
+    return False
 
 
 @app.get("/", tags=["root"])
 async def read_root() -> dict:
-	return JSONResponse(content=api_response(status="success", message="Welcome"))
+  return JSONResponse(content=api_response(status="success", message="Welcome"))
 
 
 @app.post('/auth/new_token', tags=["auth"])
 async def new_token(userId: str):
-	if check_user(userId):
-		return JSONResponse(content=api_response(status="success", data=signJWT(userId)))
-	return JSONResponse(content=api_response(status="error", message="Invalid user!"))
+  if check_user(userId):
+    return JSONResponse(content=api_response(status="success", data=signJWT(userId)))
+  return JSONResponse(content=api_response(status="error", message="Invalid user!"))
 
 
 @app.get('/setup_oom_user', tags=["auth"])
@@ -72,16 +72,16 @@ async def setup_oom_user():
 
 @app.get('/get_user/{userId}', tags=["user"])
 async def get_user_by_id(userId: str):
-	result = "An error occurred"
-	status = "error"
-	user = db.users.find_one({ "userId": userId }, { "_id": 0 })
+  result = "An error occurred"
+  status = "error"
+  user = db.users.find_one({ "userId": userId }, { "_id": 0 })
 
-    if user:
-    	status = "success"
-    	result = "User found"
-    else:
-    	result = "User not found"
-
+  if user:
+    status = "success"
+    result = "User found"
+  else:
+    result = "User not found"
+    
   return JSONResponse(content=api_response(status=status, message=result, data=jsonable_encoder(user)))
 
 
