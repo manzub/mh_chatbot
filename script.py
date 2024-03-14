@@ -23,4 +23,4 @@ for item in mindfulcards:
   collection.insert_one(item)
 
 # close connection
-  client.close()
+client.close()
